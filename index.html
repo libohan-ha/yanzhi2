@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Analyzer</title>
+  <style>
+    /* 页面整体设置 */
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #00f260, #0575E6); /* 霓虹色彩渐变背景 */
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 设置简约风格的容器 */
+    .container {
+      background-color: rgba(255, 255, 255, 0.1); /* 半透明卡片背景，营造呼吸感 */
+      backdrop-filter: blur(10px); /* 苹果风格的磨砂玻璃效果 */
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25); /* 现代阴影效果 */
+      border-radius: 15px;
+      padding: 40px;
+      width: 400px;
+      text-align: center;
+      color: #fff; /* 字体颜色 */
+      transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    /* 鼠标悬停时的轻微动画，增加呼吸感 */
+    .container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    /* 标题样式，简约优雅 */
+    h2 {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    /* 输入框样式 */
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.3); /* 苹果风格的边框 */
+      background-color: rgba(255, 255, 255, 0.2); /* 半透明输入框背景 */
+      color: #fff;
+      outline: none;
+      margin-bottom: 20px;
+      font-size: 16px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    /* 按钮样式 */
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00f260; /* 霓虹色彩 */
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+    }
+
+    /* 鼠标悬停按钮时 */
+    button:hover {
+      background-color: #0575E6; /* 霓虹色变化 */
+    }
+
+    /* 进度条容器 */
+    #progressBar {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.2); /* 半透明背景 */
+      border-radius: 25px;
+      overflow: hidden;
+      height: 20px;
+      margin-bottom: 20px;
+      display: none; /* 初始隐藏进度条 */
+    }
+
+    /* 进度条填充部分 */
+    #progressFill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(135deg, #00f260, #0575E6); /* 霓虹色彩渐变 */
+      transition: width 0.3s ease-in-out;
+    }
+
+    /* 结果区域样式 */
+    #response {
+      height: 150px;
+      overflow-y: auto; /* 可滑动 */
+      margin-top: 20px;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.2); /* 半透明背景 */
+      border-radius: 10px;
+    }
+
+    /* 结果文本 */
+    #response p {
+      font-size: 18px;
+      margin: 10px 0;
+      color: #fff;
+    }
+
+    /* 响应式设计，适配不同屏幕 */
+    @media (max-width: 480px) {
+      .container {
+        width: 90%;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>颜值打分</h2>
+  
+    <input type="file" id="imageInput" accept="image/*"><br><br>
+    <button id="sendButton">开始</button>
+    
+    <div id="progressBar">
+      <div id="progressFill"></div>
+    </div>
+  
+    <div id="response"></div>
+  </div>
+
+  <script>
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const apiKey = "sk-wkJ8C4yXkzkXiwUm2e0322A6Bf254239824bC7D6F91a3468"; // ⚠️ Warning: Exposing API keys is insecure
+      const fileInput = document.getElementById('imageInput');
+      const progressBar = document.getElementById('progressBar');
+      const progressFill = document.getElementById('progressFill');
+      
+      if (fileInput.files.length === 0) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      
+      reader.onloadend = function() {
+        const base64Image = reader.result.split(',')[1];
+        
+        const payload = {
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "你来进行颜值打分，根据五官、发型、脸型、氛围、穿搭、配饰综合评判，不要阿谀奉承，不要玻璃心，客观公平，一阵见血，满分十分"
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 300
+        };
+
+        // 使用 XMLHttpRequest 监控上传进度
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "https://xiaoai.plus/v1/chat/completions", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Authorization", `Bearer ${apiKey}`);
+
+        // 显示进度条
+        progressBar.style.display = 'block';
+
+        xhr.upload.onprogress = function(event) {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            progressFill.style.width = percentComplete + '%'; // 更新进度条宽度
+          }
+        };
+
+        xhr.onload = function() {
+          const data = JSON.parse(xhr.responseText);
+          const gptResponse = data.choices[0].message.content;
+          document.getElementById('response').textContent = gptResponse;
+          progressBar.style.display = 'none'; // 隐藏进度条
+        };
+
+        xhr.onerror = function() {
+          console.error('Error:', xhr.statusText);
+          document.getElementById('response').textContent = 'An error occurred. Check the console for details.';
+          progressBar.style.display = 'none'; // 隐藏进度条
+        };
+
+        // 发送请求
+        xhr.send(JSON.stringify(payload));
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  </script>
+
+</body>
+</html>
